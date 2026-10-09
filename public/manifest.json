@@ -1,0 +1,18 @@
+{
+  "name": "IMS — Institute Management System",
+  "short_name": "IMS",
+  "description": "School ERP portals — attendance, fees, academics",
+  "start_url": "/login",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f766e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/window.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
