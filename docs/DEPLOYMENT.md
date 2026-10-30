@@ -89,6 +89,8 @@ Per-school export is also available in **Settings → Backup** (JSON download).
 
 Uploaded documents are stored under `public/uploads/{tenantId}/`. Back up this folder with the database or migrate to S3-compatible storage for scale.
 
+Homework submission attachments are stored privately under `private_uploads/{tenantId}/homework/` and are served only through an authenticated API. Back up this folder with the database. Deployments with ephemeral local filesystems must use durable shared storage before enabling homework attachments in production.
+
 ## Security hardening
 
 - Use HTTPS only; cookies are `httpOnly` and should be `secure` in production (configure via reverse proxy / Next.js deployment).

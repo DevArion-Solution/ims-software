@@ -81,10 +81,10 @@ If numbers look stale after updates: **Settings → Reset demo data** (school) o
 - `/payslip/[id]` — salary payslip (earnings, tax, unpaid leave, bank)
 
 ### Portals
-- Teacher: classes, attendance, marks, timetable, report card links
+- Teacher: classes, attendance, marks, timetable, report card links, homework review and grading
 - Accountant: collection desk, challans, vouchers, fee reports
 - Parent: child fees/attendance/results/notices + report/ID card
-- Student: timetable, results, fees, notices + cards
+- Student: timetable, homework submission and returned feedback, results, fees, notices + cards
 
 ## Math engine (`src/lib/calc`)
 - Fee net = base − discount + late fee
@@ -141,10 +141,10 @@ School operational modules still run through a client DataProvider that **loads/
 - **Accounts polish** — date/campus filters; ledger/expenses/trips/payroll/reconcile CSV; fee collected vs fee receipts gap; unposted expenses & unsettled trips
 
 ## Role Portals Phase 4
-- **Teacher** — classes, timetable, attendance, marks, homework, leave, notices (staff-scoped)
+- **Teacher** — classes, timetable, attendance, marks, homework assignments, student submission review/grading, leave, notices (staff-scoped)
 - **Accountant** — fee collection, challans, payroll, expenses, vouchers, reports with ledger/reconcile CSV packs
 - **Parent** — child switcher, fee pay (JazzCash/Easypaisa/card demo), attendance calendar, results, homework, notices
-- **Student** — timetable grid, homework, results by exam, fees, attendance calendar, notices
+- **Student** — timetable grid, homework answer/file submission, returned grades and feedback, results by exam, fees, attendance calendar, notices
 - **Principal** — school pulse, leave + admission approvals, staff directory, high-level reports
 - **Librarian** — catalog, issue/return, overdue fines (Rs 10/day) + post fine as fee
 - **Receptionist** — admission inquiries, visitor log, student lookup

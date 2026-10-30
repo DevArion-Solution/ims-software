@@ -102,7 +102,8 @@ export function studentScope(data: ImsData, linkedStudentId?: string) {
       (h) =>
         h.className === me.className &&
         (!h.section || h.section === me.section) &&
-        h.status === "assigned",
+        (h.status === "assigned" ||
+          (h.submissions ?? []).some((submission) => submission.studentId === me.id)),
     ),
     notices: data.notices.filter(
       (n) =>

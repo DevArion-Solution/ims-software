@@ -472,6 +472,25 @@ export async function saveSchoolWorkspace(tenantId: string, data: unknown) {
   });
 }
 
+export async function updateSchoolWorkspace(
+  tenantId: string,
+  update: (data: unknown) => unknown,
+) {
+  return prisma.$transaction(
+    async (tx) => {
+      const current = await tx.schoolWorkspace.findUnique({ where: { tenantId } });
+      if (!current) throw new Error(`School workspace not found for tenant ${tenantId}`);
+      const data = update(current.data);
+      await tx.schoolWorkspace.update({
+        where: { tenantId },
+        data: { data: data as Prisma.InputJsonValue },
+      });
+      return data;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
+}
+
 export async function findAuthAccountByEmail(email: string) {
   return prisma.authAccount.findFirst({
     where: {

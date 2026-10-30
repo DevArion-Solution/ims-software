@@ -36,6 +36,7 @@ import type {
   HostelRoom,
   HostelVisitor,
   Homework,
+  HomeworkSubmission,
   Institute,
   InventoryItem,
   InventoryTxn,
@@ -485,6 +486,12 @@ interface DataContextValue {
   addHomework: (input: Omit<Homework, "id" | "createdOn" | "status"> & { status?: Homework["status"] }) => void;
   closeHomework: (id: string) => void;
   deleteHomework: (id: string) => void;
+  submitHomework: (homeworkId: string, submission: HomeworkSubmission) => void;
+  gradeHomeworkSubmission: (
+    homeworkId: string,
+    studentId: string,
+    grade: Pick<HomeworkSubmission, "score" | "feedback" | "gradedAt" | "gradedBy">,
+  ) => void;
   importStudentsCsv: (csvText: string) => { added: number; skipped: number; errors: string[] };
   importStaffCsv: (csvText: string) => { added: number; skipped: number; errors: string[] };
   rolloverAcademicYear: (newYear: string, options?: { promoteClasses?: boolean; clearAttendance?: boolean }) => {
@@ -668,9 +675,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tenantId, data }),
-      }).catch((error) => {
-        console.error("Failed to persist school data to PostgreSQL", error);
-      });
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const result = (await res.json().catch(() => null)) as { error?: string } | null;
+            console.error(
+              "Failed to persist school data to PostgreSQL",
+              result?.error ?? `HTTP ${res.status}`,
+            );
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to persist school data to PostgreSQL", error);
+        });
     }, 500);
     return () => window.clearTimeout(timer);
   }, [data, ready, tenantId]);
@@ -2691,6 +2708,39 @@ export function DataProvider({ children }: { children: ReactNode }) {
         mutate((prev) => ({
           ...prev,
           homework: prev.homework.filter((h) => h.id !== id),
+        })),
+      submitHomework: (homeworkId, submission) =>
+        mutate((prev) => ({
+          ...prev,
+          homework: prev.homework.map((homework) =>
+            homework.id === homeworkId
+              ? {
+                  ...homework,
+                  submissions: [
+                    ...(homework.submissions ?? []).filter(
+                      (existing) => existing.studentId !== submission.studentId,
+                    ),
+                    submission,
+                  ],
+                }
+              : homework,
+          ),
+        })),
+      gradeHomeworkSubmission: (homeworkId, studentId, grade) =>
+        mutate((prev) => ({
+          ...prev,
+          homework: prev.homework.map((homework) =>
+            homework.id === homeworkId
+              ? {
+                  ...homework,
+                  submissions: (homework.submissions ?? []).map((submission) =>
+                    submission.studentId === studentId
+                      ? { ...submission, ...grade }
+                      : submission,
+                  ),
+                }
+              : homework,
+          ),
         })),
 
       importStudentsCsv: (csvText) => {

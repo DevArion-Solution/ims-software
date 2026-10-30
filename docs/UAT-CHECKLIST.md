@@ -45,6 +45,11 @@ Manual walkthrough before go-live. Check each box when verified.
 
 - [ ] Mark attendance (admin + teacher scoped classes)
 - [ ] Enter exam marks → report card print
+- [ ] Teacher assigns homework with a due date and optional points
+- [ ] Student submits an answer and PDF/image before the due date
+- [ ] Teacher can download the submission and return a score/feedback
+- [ ] Student sees the returned grade/feedback; another student's attachment is inaccessible
+- [ ] Student cannot edit assignment details or alter grades through the school-data API
 - [ ] Send notice (SMS/email sandbox) → delivery log entries
 - [ ] Library issue/return + overdue fine
 - [ ] Transport/hostel pages load for enabled plans

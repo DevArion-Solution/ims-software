@@ -6,6 +6,7 @@ import {
   saveSchoolWorkspace,
   syncTenantCounts,
 } from "@/lib/db/platform-repo";
+import { validateHomeworkUpdate } from "@/lib/school/homework-access";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,33 @@ export async function PUT(request: Request) {
 
     const auth = await requireTenantAccess(req, tenantId, { write: true });
     if (!auth.ok) return auth.response;
+
+    const currentData = await getSchoolWorkspace(tenantId);
+    const homeworkError = validateHomeworkUpdate(auth.session, currentData, body.data);
+    if (homeworkError) {
+      return NextResponse.json({ error: homeworkError }, { status: 403 });
+    }
+    if (auth.session.portal === "student" && auth.session.linkedStudentId) {
+      const currentStudent = (currentData as { students?: Array<{ id: string; firstName: string; lastName: string }> } | null)
+        ?.students?.find((student) => student.id === auth.session.linkedStudentId);
+      const nextHomework = (body.data as { homework?: Array<{ submissions?: Array<{ studentId: string; studentName: string }> }> })
+        .homework ?? [];
+      const expectedName = currentStudent
+        ? `${currentStudent.firstName} ${currentStudent.lastName}`.trim()
+        : "";
+      if (
+        expectedName &&
+        nextHomework.some((homework) =>
+          homework.submissions?.some(
+            (submission) =>
+              submission.studentId === auth.session.linkedStudentId &&
+              submission.studentName !== expectedName,
+          ),
+        )
+      ) {
+        return NextResponse.json({ error: "Submission name does not match your student account" }, { status: 403 });
+      }
+    }
 
     // Plan / seat enforcement (Phase 2.3)
     const access = await getTenantAccessById(tenantId);

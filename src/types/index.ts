@@ -568,6 +568,27 @@ export interface Homework {
   dueDate: string;
   createdOn: string;
   status: "assigned" | "closed";
+  maxPoints?: number;
+  submissions?: HomeworkSubmission[];
+}
+
+export interface HomeworkAttachment {
+  id: string;
+  fileName: string;
+  mimeType: "application/pdf" | "image/jpeg" | "image/png" | "image/webp";
+  size: number;
+}
+
+export interface HomeworkSubmission {
+  studentId: string;
+  studentName: string;
+  answer: string;
+  attachments: HomeworkAttachment[];
+  submittedAt: string;
+  score?: number;
+  feedback?: string;
+  gradedAt?: string;
+  gradedBy?: string;
 }
 
 export interface DeliveryLog {
