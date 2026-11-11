@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const period = body.period;
     const channels: NotifyChannel[] = (
       body.channels?.length ? body.channels : ["email"]
-    ).filter((c) => c !== "whatsapp");
+    ).filter((c): c is NotifyChannel => c !== "whatsapp");
     const locale: AlertLocale = body.locale ?? "both";
     const absences = body.absences ?? [];
     if (!absences.length) {

@@ -20,6 +20,7 @@ export default function AccountantHomePage() {
   const overdue = data.fees.filter(
     (f) => f.status === "overdue" || f.status === "pending" || f.status === "partial",
   );
+  const pendingPayroll = data.payroll.filter((p) => p.status !== "paid").length;
   const [collectId, setCollectId] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const reconcile = feeLedgerReconcile(data.fees, data.vouchers);

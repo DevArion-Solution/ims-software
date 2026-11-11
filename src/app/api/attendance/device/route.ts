@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
         studentName: string;
         status: AttendanceStatus;
         remarks?: string;
+        period?: number;
       }[];
       alertSettings?: {
         absenceAutoNotify?: boolean;

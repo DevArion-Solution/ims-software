@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         : settings.feeReminderChannels?.length
           ? settings.feeReminderChannels
           : ["email"]
-    ).filter((c) => c !== "whatsapp");
+    ).filter((c): c is NotifyChannel => c !== "whatsapp");
     const locale: AlertLocale = body.locale ?? settings.feeReminderLocale ?? "both";
     const schoolName = workspace.institute?.name ?? "School";
     const students = workspace.students ?? [];

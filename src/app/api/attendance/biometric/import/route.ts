@@ -24,6 +24,7 @@ type Workspace = {
     studentName: string;
     status: AttStatus;
     remarks?: string;
+    period?: number;
   }[];
   alertSettings?: {
     absenceAutoNotify?: boolean;

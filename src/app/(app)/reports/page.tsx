@@ -82,7 +82,7 @@ export default function ReportsPage() {
       ["Date", "Period", "Class", "Section", "Student", "Status", "Subject", "Remarks"],
       ...data.attendance.map((a) => [
         a.date,
-        a.period ?? 0,
+        String(a.period ?? 0),
         a.className,
         a.section,
         a.studentName,
