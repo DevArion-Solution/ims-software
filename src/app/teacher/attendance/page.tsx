@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
 import { PortalShell, TEACHER_NAV } from "@/components/layout/PortalShell";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useData } from "@/components/providers/DataProvider";
@@ -15,19 +15,36 @@ import { Badge } from "@/components/ui/Badge";
 import { formatDate, labelize } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 import {
-  loadOfflineAttendance,
+  getOfflineAttendanceCount,
   queueOfflineAttendance,
+  subscribeOfflineAttendance,
   syncOfflineAttendance,
 } from "@/lib/pwa/offline-attendance";
 import { fireAbsenceAlerts } from "@/lib/notify/client-alerts";
 import { CLASS_PERIODS, periodLabel } from "@/lib/attendance/periods";
 import type { AttendanceStatus } from "@/types";
 
+function subscribeOnlineStatus(callback: () => void) {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+}
+
+function getOnlineStatus() {
+  return navigator.onLine;
+}
+
 export default function TeacherAttendancePage() {
   const { session } = useAuth();
   const { data, upsertAttendance } = useData();
   const { dict } = useLocale();
-  const scope = teacherScope(data, session?.linkedStaffId);
+  const scope = useMemo(
+    () => teacherScope(data, session?.linkedStaffId),
+    [data, session?.linkedStaffId],
+  );
   const [classKey, setClassKey] = useState(() => {
     const c = scope.myClasses[0];
     return c ? `${c.name}|${c.section}` : "";
@@ -35,8 +52,12 @@ export default function TeacherAttendancePage() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [period, setPeriod] = useState(1);
   const [msg, setMsg] = useState("");
-  const [offlineCount, setOfflineCount] = useState(0);
-  const [online, setOnline] = useState(true);
+  const offlineCount = useSyncExternalStore(
+    subscribeOfflineAttendance,
+    getOfflineAttendanceCount,
+    () => 0,
+  );
+  const online = useSyncExternalStore(subscribeOnlineStatus, getOnlineStatus, () => true);
 
   const [className, section] = classKey.split("|");
   const students = useMemo(
@@ -60,10 +81,12 @@ export default function TeacherAttendancePage() {
     );
   }, [data.timetable, className, section, period, date]);
 
-  const [marks, setMarks] = useState<Record<string, AttendanceStatus>>({});
-
-  // Prefill from saved period sheet
-  useEffect(() => {
+  const attendanceKey = `${className}|${section}|${date}|${period}`;
+  const [markDraft, setMarkDraft] = useState<{
+    key: string;
+    marks: Record<string, AttendanceStatus>;
+  }>({ key: "", marks: {} });
+  const marks = useMemo(() => {
     const next: Record<string, AttendanceStatus> = {};
     for (const s of students) {
       const existing = data.attendance.find(
@@ -75,24 +98,18 @@ export default function TeacherAttendancePage() {
       );
       if (existing) next[s.id] = existing.status;
     }
-    setMarks(next);
-  }, [students, data.attendance, date, className, period]);
-
-  useEffect(() => {
-    setOfflineCount(loadOfflineAttendance().length);
-    const onOnline = () => setOnline(true);
-    const onOffline = () => setOnline(false);
-    setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-    return () => {
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-    };
-  }, []);
+    if (markDraft.key === attendanceKey) Object.assign(next, markDraft.marks);
+    return next;
+  }, [students, data.attendance, date, className, period, attendanceKey, markDraft]);
 
   function setStatus(id: string, status: AttendanceStatus) {
-    setMarks((prev) => ({ ...prev, [id]: status }));
+    setMarkDraft((prev) => ({
+      key: attendanceKey,
+      marks: {
+        ...(prev.key === attendanceKey ? prev.marks : {}),
+        [id]: status,
+      },
+    }));
   }
 
   function save(e: FormEvent) {
@@ -142,7 +159,6 @@ export default function TeacherAttendancePage() {
       n += 1;
     }
     if (offline) {
-      setOfflineCount(loadOfflineAttendance().length);
       setMsg(`${t(dict, "portal.offlineQueued")} (${n}) · ${periodLabel(period)}`);
     } else {
       setMsg(`Saved ${periodLabel(period)} for ${n} students on ${date}`);
@@ -169,7 +185,6 @@ export default function TeacherAttendancePage() {
   async function syncOffline() {
     const res = await syncOfflineAttendance();
     if (res.ok) {
-      setOfflineCount(0);
       setMsg(`Synced ${res.applied ?? 0} offline mark(s)`);
     } else {
       setMsg(res.error ?? "Sync failed");

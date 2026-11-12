@@ -14,6 +14,7 @@ export interface OfflineAttendanceMark {
 }
 
 const KEY = "ims.offline.attendance";
+const CHANGE_EVENT = "ims:offline-attendance-change";
 
 export function loadOfflineAttendance(): OfflineAttendanceMark[] {
   if (typeof window === "undefined") return [];
@@ -25,9 +26,28 @@ export function loadOfflineAttendance(): OfflineAttendanceMark[] {
   }
 }
 
+export function getOfflineAttendanceCount(): number {
+  return loadOfflineAttendance().length;
+}
+
+export function subscribeOfflineAttendance(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(CHANGE_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function notifyOfflineAttendanceChange() {
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
 export function saveOfflineAttendance(marks: OfflineAttendanceMark[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, JSON.stringify(marks.slice(0, 500)));
+  notifyOfflineAttendanceChange();
 }
 
 export function queueOfflineAttendance(mark: Omit<OfflineAttendanceMark, "queuedAt">) {
@@ -48,6 +68,7 @@ export function queueOfflineAttendance(mark: Omit<OfflineAttendanceMark, "queued
 export function clearOfflineAttendance() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(KEY);
+  notifyOfflineAttendanceChange();
 }
 
 export async function syncOfflineAttendance(): Promise<{
